@@ -222,3 +222,13 @@ def test_reformat_to_xml():
     assert '<images>' in result
     assert 'id="ami-b97c8ffd"' in result
     assert 'name="suse-sles-11-sp4-byos-v20150714-pv-ssd-x86_64"' in result
+
+def test_dataversion_reformat_to_xml():
+    """Spot test reconstituted XML string from data version"""
+    version_data = "20231221.002"
+ 
+    result = ifsrequest.__reformat(version_data, 'version', 'xml')
+    expected_xml = """<?xml version='1.0' encoding='UTF-8'?>
+<version>20231221.002</version>"""
+    assert result.strip() == expected_xml.strip()
+

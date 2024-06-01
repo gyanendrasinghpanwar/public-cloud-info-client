@@ -39,6 +39,8 @@ usage: pint -h | --help
           [ --filter=<filter> ]
           [ --json | --xml ]
           [ --region=<region> ]
+       pint dataversion ({PROVIDERS}) ({CATEGORIES})
+          [ --json | --xml ]
        pint -v | --version
 
 options:
@@ -49,7 +51,7 @@ options:
    --deleted
        Only include images which have been deleted
    --deprecated
-       Only include images which are deprecated
+       Only include images which are deprecated, these are deleted 6 months after their "deprecated on" date
        (scheduled for deletion in 6 months)
    --filter=<filter>
        Comma separated list of available attributes
@@ -98,9 +100,12 @@ cloud_providers = []
 for provider in providers['providers']:
     cloud_providers.append(provider['name'])
 
+categories = ["images", "servers"]
+
 command_args = docopt(
     __doc__.format(
-        PROVIDERS = "|".join(cloud_providers)
+        PROVIDERS = "|".join(cloud_providers),
+        CATEGORIES = "|".join(categories),
     ),
     version=version.VERSION
 )
@@ -110,6 +115,13 @@ for csp in cloud_providers:
     if command_args[csp]:
         framework = csp
         break
+
+requested_category = None
+for category in categories:
+    if command_args[category]:
+        requested_category = category
+        break
+
 
 image_state = None
 image_states_data = ifsrequest.get_image_states_data(
@@ -149,7 +161,13 @@ if command_args['--region']:
     region = command_args['--region']
 
 try:
-    if command_args['images']:
+    if command_args['dataversion']:
+        print(ifsrequest.get_datasource_version_data(
+            framework,
+            requested_category,
+            output_format,
+            command_args['--filter']))
+    elif command_args['images']:
         data = ifsrequest.get_image_data(
             framework,
             image_state,

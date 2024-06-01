@@ -138,7 +138,6 @@ def __filter_greater_than(items, attr, value):
     # return the filtered list
     return filtered_items
 
-
 def __form_url(
         framework,
         info_type,
@@ -146,7 +145,8 @@ def __form_url(
         region='all',
         image_state=None,
         server_type=None,
-        apply_filters=None):
+        apply_filters=None,
+        requested_category=None):
     """Form the URL for the request"""
     url_components = []
     url_components.append(__get_base_url())
@@ -167,9 +167,10 @@ def __form_url(
     if doc_type:
         url_components.append(doc_type)
     url_components[-1] = url_components[-1] + '.json'
+    if info_type == 'dataversion':
+        url_components[-1] += ("?category=%s" % requested_category)
     url = '/'
     return url.join(url_components)
-
 
 def __get_api_version():
     """Return the API version to use"""
@@ -211,7 +212,7 @@ def __inflect(plural):
     inflections = {
         'images': 'image', 'servers': 'server',
         'providers': 'provider', 'states': 'state', 'types': 'type',
-        'regions': 'region'
+        'regions': 'region', 'version': 'version'
     }
     return inflections[plural]
 
@@ -260,7 +261,6 @@ def __parse_command_arg_filter(command_arg_filter=None):
 def __parse_server_response_data(server_response_data, info_type):
     return json.loads(server_response_data)[info_type]
 
-
 def __reformat(items, info_type, result_format):
     if result_format == 'json':
         return json.dumps(
@@ -272,8 +272,11 @@ def __reformat(items, info_type, result_format):
     else:
         # elif result_format == 'xml':
         root = etree.Element(info_type)
-        for item in items:
-            etree.SubElement(root, __inflect(info_type), item)
+        if info_type != 'version':
+           for item in items:
+             etree.SubElement(root, __inflect(info_type), item)
+        else:
+             root.text = str(items)
         return etree.tostring(
             root,
             xml_declaration=True,
@@ -415,3 +418,22 @@ def get_server_data(
         apply_filters=command_arg_filter
     )
     return __process(url, info_type, command_arg_filter, result_format)
+
+def get_datasource_version_data(
+        framework,
+        requested_category,
+        result_format='json',
+        command_arg_filter=None):
+    """Return the requested datasource version data"""
+    info_type = 'dataversion'
+    url = __form_url(
+        framework,
+        info_type,
+        result_format,
+        'all',
+        None,
+        None,
+        command_arg_filter,
+        requested_category=requested_category
+    )
+    return __process(url, 'version', command_arg_filter, result_format)
