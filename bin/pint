@@ -162,6 +162,7 @@ if command_args['--region']:
 
 try:
     if command_args['dataversion']:
+        output_format = 'xml' if output_format == 'xml' else 'json'
         print(ifsrequest.get_datasource_version_data(
             framework,
             requested_category,
